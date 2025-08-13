@@ -151,7 +151,7 @@ def grow_alleles(contig, pos, ref, alt, fasta):
     return pos, ref, alt
 
 
-def spdi_normalize(contig, pos, ref, alt, fasta):
+def normalize(contig, pos, ref, alt, fasta):
     """
     Apply SPDI's Variant Overprecision Correction Algorithm (VOCA) to normalize variant
     :param contig: variant contig
@@ -183,22 +183,46 @@ def spdi_normalize(contig, pos, ref, alt, fasta):
     return new_pos, new_ref, new_alt
 
 
+def convert(contig, pos, ref, alt, fasta, genome="GRCh38"):
+    """
+    Convert a variant in VCF coordinates to Canonical SPDI format
+    :param contig: variant contig
+    :param pos: coordinate of variant (1-based)
+    :param ref: Reference Allele
+    :param alt: Alternate Allele
+    :param fasta: reference fasta as pysam FastaFile object
+    :param genome: Genome build version {GRCh37, GRCh38}
+    :return: Canonical SPDI variant
+    """
+    new_contig = None
+    if contig not in fasta.references:
+        logging.error(f"Chromosome not found in reference FASTA: {contig}")
+    elif contig not in _CONTIG_ALIASES[genome]:
+        logging.error(f"Chromosome not in alias list: {contig}")
+    else:
+        new_contig = _CONTIG_ALIASES[genome][contig]
+
+    # get normalized coordinate and alleles
+    normalized = normalize(contig, pos, ref, alt, fasta)
+
+    return f"{new_contig}:{normalized[0]}:{normalized[1]}:{normalized[2]}"
+
+
 def main():
     # set logging format
     logging.basicConfig(format='%(levelname)s\t%(asctime)s - %(message)s', level=logging.INFO)
+    logging.info("Starting SPDI Conversion")
     # parse arguments
     args = get_args()
 
+    logging.info("Loading reference genome fasta file")
+    # load genome fasta file
     fasta = pysam.FastaFile(args.fasta)
-    if args.chr not in fasta.references:
-        logging.error("Chromosome not found in reference FASTA: " + args.chr)
-    elif args.chr not in _CONTIG_ALIASES[args.genome]:
-        logging.error("Chromosome not in alias list: " + args.chr)
-    else:
-        # convert to Canonical SPDI notation
-        ncbi_alias = _CONTIG_ALIASES[args.genome][args.chr]
-        new_pos, new_ref, new_alt = spdi_normalize(args.chr, args.pos, args.ref, args.alt, fasta)
-        print(":".join([ncbi_alias, str(new_pos), new_ref, new_alt]))
+
+    logging.info("Normalizing variant")
+    # convert variant to Canonical SPDI notation
+    print(convert(args.chr, args.pos, args.ref, args.alt, fasta))
+    logging.info("Finished SPDI Conversion")
 
 
 if __name__ == '__main__':
