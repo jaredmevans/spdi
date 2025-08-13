@@ -1,8 +1,7 @@
 """
 SPDI unit tests
 """
-import pytest
-import spdi
+from src.spdi import spdi
 
 
 def test_right_trim_alleles():
