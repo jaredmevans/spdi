@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spdi"
+version = "0.1.0"
+description = "Generate the SPDI canonical allele representation of genomic variants"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Jared M Evans" }
+]
+requires-python = ">=3.7"
+dependencies = [
+    "pysam"
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
